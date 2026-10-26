@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Khảo sát Đèn & Biển</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --red:#d71920; --navy:#1a3c6e; --gold:#ffc107; --green:#1e8e4e; --bg:#f4f6fb;
+    --card:#fff; --line:#e5e9f2; --txt:#1c2434; --mut:#6b7280; }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{font-family:'Be Vietnam Pro',system-ui,sans-serif; background:var(--bg); color:var(--txt);
+    min-height:100vh; padding:16px; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px; margin:0 auto}
+  .head{background:linear-gradient(135deg,var(--navy),#2c4a8a); color:#fff; border-radius:16px;
+    padding:20px; box-shadow:0 8px 24px rgba(26,60,110,.18)}
+  .head h1{font-size:20px; font-weight:800}
+  .head p{font-size:13px; opacity:.85; margin-top:5px}
+  .card{background:var(--card); border-radius:14px; padding:18px; margin-top:14px;
+    border:1px solid var(--line); box-shadow:0 2px 10px rgba(20,30,60,.06)}
+  .card h2{font-size:15px; font-weight:700; color:var(--navy); margin-bottom:12px}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px}
+  .kpi{background:#f6f8fc; border:1px solid var(--line); border-radius:12px; padding:14px; text-align:center}
+  .kpi .n{font-size:26px; font-weight:800; line-height:1}
+  .kpi .l{font-size:11.5px; color:var(--mut); margin-top:6px}
+  .kpi.red .n{color:var(--red)} .kpi.green .n{color:var(--green)} .kpi.navy .n{color:var(--navy)}
+  .bar{height:10px; background:#e9edf5; border-radius:8px; overflow:hidden; margin-top:12px}
+  .bar i{display:block; height:100%; background:linear-gradient(90deg,var(--green),#37b26c); border-radius:8px; transition:width .4s}
+  .filters{display:flex; gap:10px; flex-wrap:wrap}
+  .filters select,.filters input{flex:1; min-width:140px; padding:11px 13px; border:1.5px solid var(--line);
+    border-radius:10px; font-family:inherit; font-size:14px; background:#fafbfd; outline:none}
+  table{width:100%; border-collapse:collapse; margin-top:8px; font-size:13px}
+  th,td{padding:9px 10px; text-align:left; border-bottom:1px solid var(--line)}
+  th{background:#f6f8fc; color:var(--mut); font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.3px}
+  td.num{font-weight:700}
+  .tag{display:inline-block; padding:3px 9px; border-radius:16px; font-size:11px; font-weight:700}
+  .tag.ok{background:#e6f6ec; color:var(--green)} .tag.warn{background:#fdeeee; color:var(--red)}
+  .login{max-width:380px; margin:60px auto}
+  .login input{width:100%; margin-top:12px}
+  .login .btn{margin-top:12px}
+  .btn{width:100%; background:var(--red); color:#fff; border:none; border-radius:12px; padding:14px;
+    font-size:15px; font-weight:800; font-family:inherit; cursor:pointer; box-shadow:0 6px 18px rgba(215,25,32,.3)}
+  .err{color:var(--red); font-size:12.5px; margin-top:8px; display:none}
+  .empty{text-align:center; color:var(--mut); padding:24px 0; font-size:13.5px}
+  .logout{float:right; font-size:12px; color:rgba(255,255,255,.85); text-decoration:none; background:rgba(255,255,255,.14);
+    padding:6px 12px; border-radius:16px; cursor:pointer}
+  .foot{text-align:center; color:var(--mut); font-size:11.5px; margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- LOGIN -->
+  <div class="card login" id="loginBox">
+    <h2>🔐 Đăng nhập Dashboard</h2>
+    <p style="font-size:13px;color:var(--mut)">Nhập mật khẩu để xem tiến độ khảo sát</p>
+    <input id="pwd" type="password" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn" onclick="login()">Đăng nhập</button>
+    <div class="err" id="loginErr">Sai mật khẩu, thử lại</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dash" style="display:none">
+    <div class="head">
+      <a class="logout" onclick="logout()">Đăng xuất</a>
+      <h1>📊 Tiến độ Khảo sát Đèn & Biển</h1>
+      <p>Miền Bắc · cập nhật: <span id="updated">—</span></p>
+    </div>
+
+    <div class="card">
+      <h2>Tổng quan</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="n" id="kTotal">—</div><div class="l">CH Miền Bắc</div></div>
+        <div class="kpi green"><div class="n" id="kDone">—</div><div class="l">Đã khảo sát</div></div>
+        <div class="kpi navy"><div class="n" id="kPct">—</div><div class="l">Tỷ lệ hoàn thành</div></div>
+        <div class="kpi red"><div class="n" id="kAlert">—</div><div class="l">CH cháy ≥ 5 bóng</div></div>
+      </div>
+      <div class="bar"><i id="barFill" style="width:0%"></i></div>
+    </div>
+
+    <div class="card">
+      <h2>Danh sách đã khảo sát <span id="rowCount" style="color:var(--mut);font-weight:500"></span></h2>
+      <div class="filters">
+        <select id="fGdv" onchange="render()"></select>
+        <select id="fTinh" onchange="render()"></select>
+        <input id="fSearch" placeholder="Tìm Mã SAP / Tên CH / QLKV..." oninput="render()">
+      </div>
+      <div id="tableWrap"><div class="empty">Đang tải dữ liệu...</div></div>
+    </div>
+
+    <div class="foot">Dashboard Khảo sát Đèn & Biển · Miền Bắc</div>
+  </div>
+</div>
+
+<script>
+// ⚠️ Dán URL Web App (sau khi deploy Apps Script) vào đây — dùng chung với index.html:
+const GAS_URL = '__GAS_URL__';
+let TOKEN = sessionStorage.getItem('denbien_token') || '';
+let ROWS = [];
+let TOTAL_NB = 2363;
+
+const $ = id => document.getElementById(id);
+
+async function call(data){
+  const r = await fetch(GAS_URL, { method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(data) });
+  return r.json();
+}
+
+async function loadTotal(){
+  try{
+    const res = await call({action:'getStores'});
+    if(res.ok && res.count) TOTAL_NB = res.count;
+  }catch(e){}
+}
+
+async function login(){
+  const pwd = $('pwd').value.trim();
+  if(!pwd) return;
+  if(GAS_URL === '__GAS_URL__'){ showErr(true); return; }
+  $('loginErr').style.display = 'none';
+  try{
+    const res = await call({action:'getResults', token:pwd});
+    if(res.ok){
+      TOKEN = pwd;
+      sessionStorage.setItem('denbien_token', TOKEN);
+      enterDash(res.rows || []);
+    } else {
+      showErr(true);
+    }
+  }catch(e){ showErr(true); }
+}
+
+function showErr(on){ $('loginErr').style.display = on ? 'block' : 'none'; }
+
+function enterDash(rows){
+  ROWS = rows;
+  $('loginBox').style.display = 'none';
+  $('dash').style.display = 'block';
+  $('updated').textContent = new Date().toLocaleString('vi-VN');
+  buildFilters();
+  render();
+}
+
+function buildFilters(){
+  const gdvs = [...new Set(ROWS.map(r=>r.gdv).filter(Boolean))].sort();
+  const tinh = [...new Set(ROWS.map(r=>r.tinh).filter(Boolean))].sort();
+  $('fGdv').innerHTML = '<option value="">Tất cả GĐV</option>' + gdvs.map(g=>`<option>${esc(g)}</option>`).join('');
+  $('fTinh').innerHTML = '<option value="">Tất cả Tỉnh</option>' + tinh.map(t=>`<option>${esc(t)}</option>`).join('');
+}
+
+function render(){
+  const done = new Set(ROWS.map(r=>r.sap)).size;
+  const alert = ROWS.filter(r=>r.total >= 5).length;
+  $('kTotal').textContent = TOTAL_NB;
+  $('kDone').textContent = done;
+  const pct = TOTAL_NB ? Math.round(done/TOTAL_NB*100) : 0;
+  $('kPct').textContent = pct + '%';
+  $('kAlert').textContent = alert;
+  $('barFill').style.width = Math.min(100,pct) + '%';
+
+  const fGdv = $('fGdv').value, fTinh = $('fTinh').value;
+  const q = $('fSearch').value.trim().toLowerCase();
+  let list = ROWS.filter(r =>
+    (!fGdv || r.gdv === fGdv) &&
+    (!fTinh || r.tinh === fTinh) &&
+    (!q || (r.ten||'').toLowerCase().includes(q) || (r.sap||'').toLowerCase().includes(q) || (r.qlkv||'').toLowerCase().includes(q))
+  );
+  $('rowCount').textContent = '· ' + list.length + ' phiếu';
+
+  const wrap = $('tableWrap');
+  if(!list.length){ wrap.innerHTML = '<div class="empty">Chưa có dữ liệu khớp bộ lọc</div>'; return; }
+
+  let html = `<table>
+    <thead><tr>
+      <th>Thời gian</th><th>Mã SAP</th><th>Tên cửa hàng</th><th>Tỉnh</th><th>QLKV</th><th>GĐV</th>
+      <th>Đèn</th><th>Tổng cháy</th><th>Trạng thái</th>
+    </tr></thead><tbody>`;
+  for(const r of list){
+    const warn = r.total >= 5;
+    const den = [
+      r.bien==='Cháy' ? 'Biển '+r.bienChay : '', r.gam==='Cháy' ? 'Gầm '+r.gamChay : '', r.tran==='Cháy' ? 'Trần '+r.tranChay : ''
+    ].filter(Boolean).join(' · ') || 'OK';
+    html += `<tr>
+      <td style="white-space:nowrap">${esc(r.ts)}</td>
+      <td>${esc(r.sap)}</td>
+      <td>${esc(r.ten)}</td>
+      <td>${esc(r.tinh)}</td>
+      <td>${esc(r.qlkv)}</td>
+      <td>${esc(r.gdv)}</td>
+      <td>${esc(den)}</td>
+      <td class="num" style="color:${warn?'var(--red)':'inherit'}">${r.total}</td>
+      <td>${warn ? '<span class="tag warn">⚠️ Cháy '+r.total+'</span>' : '<span class="tag ok">OK</span>'}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function logout(){
+  sessionStorage.removeItem('denbien_token');
+  TOKEN = ''; ROWS = [];
+  $('dash').style.display = 'none';
+  $('loginBox').style.display = 'block';
+  $('pwd').value = '';
+}
+
+function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// auto-login nếu đã có token + load tổng CH
+(async function init(){
+  await loadTotal();
+  $('kTotal').textContent = TOTAL_NB;
+  if(TOKEN){
+    try{
+      const res = await call({action:'getResults', token:TOKEN});
+      if(res.ok){ enterDash(res.rows || []); return; }
+    }catch(e){}
+    sessionStorage.removeItem('denbien_token'); TOKEN = '';
+  }
+})();
+</script>
+</body>
+</html>
