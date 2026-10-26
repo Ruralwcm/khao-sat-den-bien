@@ -83,6 +83,11 @@
     font-size:14px; transition:.3s; box-shadow:0 8px 24px rgba(0,0,0,.2); z-index:50;
   }
   .toast.show{transform:translateX(-50%) translateY(0)}
+  .maplink{
+    display:inline-block; margin-top:12px; font-size:13px; font-weight:600; color:var(--navy);
+    text-decoration:none; background:#eef3fb; padding:9px 14px; border-radius:10px;
+  }
+  .maplink:hover{background:#e0e9f7}
   .foot{text-align:center; color:var(--mut); font-size:11.5px; margin-top:20px}
 </style>
 </head>
@@ -105,6 +110,7 @@
       <div class="it"><div class="k">QLKV</div><div class="v" id="vQlkv">—</div></div>
       <div class="it"><div class="k">GĐV</div><div class="v" id="vGdv">—</div></div>
     </div>
+    <a id="mapLink" href="#" target="_blank" style="display:none" class="maplink">📍 Xem vị trí cửa hàng trên bản đồ</a>
   </div>
 
   <div class="card">
@@ -161,7 +167,7 @@
   <div class="warn" id="warn">⚠️ CẢNH BÁO: Cửa hàng bị cháy <span id="warnNum">5</span>+ bóng đèn. Cần báo quản lý xử lý ngay!</div>
 
   <button class="btn" id="btnSubmit" disabled>Gửi kết quả</button>
-  <div class="foot">Khảo sát Đèn & Biển · Miền Bắc</div>
+  <div class="foot">Khảo sát Đèn & Biển · Miền Bắc · <a href="dashboard.html" style="color:var(--navy);font-weight:600">📊 Dashboard</a></div>
 </div>
 
 <div class="toast" id="toast">✅ Đã gửi thành công!</div>
@@ -205,10 +211,19 @@ function matchStore(){
     $('vQlkv').textContent = found.qlkv || '—';
     $('vGdv').textContent  = found.gdv || '—';
     $('storeSearch').style.borderColor = 'var(--green)';
+    // crosslink Maps (dùng toạ độ Storelist)
+    const ml = $('mapLink');
+    if(found.lat && found.lng && parseFloat(found.lat) && parseFloat(found.lng)){
+      ml.href = 'https://www.google.com/maps/search/?api=1&query=' + found.lat + ',' + found.lng;
+      ml.style.display = 'inline-block';
+    } else {
+      ml.style.display = 'none';
+    }
   } else {
     selectedStore = null;
     $('vTinh').textContent = $('vHuyen').textContent = $('vQlkv').textContent = $('vGdv').textContent = '—';
     $('storeSearch').style.borderColor = 'var(--line)';
+    $('mapLink').style.display = 'none';
   }
   updateReady();
 }
@@ -282,6 +297,7 @@ function resetForm(){
   selectedStore = null;
   $('storeSearch').value = '';
   $('vTinh').textContent = $('vHuyen').textContent = $('vQlkv').textContent = $('vGdv').textContent = '—';
+  $('mapLink').style.display = 'none';
   document.querySelectorAll('input[type=radio]').forEach(r=>{ if(r.value==='Bình thường'||r.value==='Hoạt động') r.checked=true; });
   $('bienChay').value = $('gamChay').value = $('tranChay').value = '';
   refresh();
